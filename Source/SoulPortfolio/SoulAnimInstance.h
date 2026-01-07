@@ -7,7 +7,7 @@
 #include "SoulAnimInstance.generated.h"
 
 /**
- * 
+ *
  */
 UCLASS()
 class SOULPORTFOLIO_API USoulAnimInstance : public UAnimInstance
@@ -39,7 +39,31 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	bool bIsAccelerating;
 
+	// 속도 여부
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	bool bHasVelocity;
+
+	// Crouch 여부
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	bool IsCrouching;
+
 	// 이동 방향 (-180 ~ 180도, 스트레이핑용)
 	UPROPERTY(BlueprintReadOnly, Category = "Movement")
 	float Direction;
+
+	// 이번 프레임에 이동한 거리
+	UPROPERTY(BlueprintReadOnly, Category = "Distance Matching")
+	float DisplacementSinceLastFrame;
+
+	// 누적 이동 거리
+	UPROPERTY(BlueprintReadOnly, Category = "Distance Matching")
+	float DisplacementSinceStart;
+
+	// 지난 프레임부터 현재 프레임까지의 이동속도
+	UPROPERTY(BlueprintReadOnly, Category = "Stride Warping")
+	float DisplacementSpeed;
+
+private:
+	// 이전 프레임의 캐릭터 위치를 저장할 변수 (C++ 내부 계산용)
+	FVector PreviousLocation;
 };

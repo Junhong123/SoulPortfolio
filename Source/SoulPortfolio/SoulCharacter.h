@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "InputActionValue.h" // 입력 값을 사용하기 위해 추가
+#include "CharacterTrajectoryComponent.h"
 #include "SoulCharacter.generated.h"
 
 // 캐릭터의 행동 상태
@@ -55,6 +56,26 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Combat")
 	class UAnimMontage* HitReactMontage;
 
+	// 에디터에서 어떤 무기를 낄지 고를 변수
+	UPROPERTY(EditDefaultsOnly, Category = "Combat")
+	TSubclassOf<class ASoulWeapon> DefaultWeaponClass;
+
+	// 현재 들고 있는 무기를 저장할 포인터
+	UPROPERTY(VisibleInstanceOnly, Category = "Combat")
+	TObjectPtr<class ASoulWeapon> EquippedWeapon;
+
+	// Trajectory 컴포넌트 선언
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Motion Matching")
+	UCharacterTrajectoryComponent* CharacterTrajectory;
+
+	// 서있을때 구르기 몽타주
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	class UAnimMontage* RollStandMontage;
+
+	// 달릴 때 구르기 몽타주
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	class UAnimMontage* RollSprintMontage;
+
 protected:
 	// 게임 시작 시 실행되는 함수
 	virtual void BeginPlay() override;
@@ -69,9 +90,22 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	class UInputAction* LookAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	class UInputAction* SprintAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	class UInputAction* CrouchAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	class UInputAction* RollAction;
+
 	/** 실제 움직임을 처리할 함수들 */
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
+	void Roll();
+	void OnCrouch();
+	void SprintStart(const FInputActionValue& Value);
+	void SprintStop(const FInputActionValue& Value);
 	void PerformAttack(const FInputActionValue& Value);
 
 private:

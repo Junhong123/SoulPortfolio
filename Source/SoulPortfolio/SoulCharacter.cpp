@@ -5,6 +5,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "SoulWeapon.h"
 
 // 생성자: 캐릭터의 부품을 조립하는 곳
 ASoulCharacter::ASoulCharacter()
@@ -22,14 +23,15 @@ ASoulCharacter::ASoulCharacter()
 
 	// 3. 무브먼트 설정 (이동 방향 바라보기)
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 500.0f, 0.0f);
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 400.0f, 0.0f);
 
 	// 점프 및 이동 속도 설정 (소울라이크 느낌)
 	GetCharacterMovement()->JumpZVelocity = 700.f;
 	GetCharacterMovement()->AirControl = 0.35f;
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MaxWalkSpeed = 200.f;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
+	GetCharacterMovement()->GetNavAgentPropertiesRef().bCanCrouch = true;
 
 	// 4. 스프링 암 설정
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -62,6 +64,10 @@ ASoulCharacter::ASoulCharacter()
 	BootMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("BootMesh"));
 	BootMesh->SetupAttachment(GetMesh());
 	BootMesh->SetLeaderPoseComponent(GetMesh());
+
+	// Trajcetory 컴포넌트
+	CharacterTrajectory = CreateDefaultSubobject<UCharacterTrajectoryComponent>(TEXT("CharacterTrajectory"));
+
 }
 
 // 게임 시작 시 실행 (BeginPlay)
@@ -79,6 +85,22 @@ void ASoulCharacter::BeginPlay()
 			{
 				Subsystem->AddMappingContext(DefaultMappingContext, 0);
 			}
+		}
+	}
+
+	// 1. 무기 클래스가 있는지 확인
+	if (DefaultWeaponClass) {
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		// 2. 월드에 무기 액터를 생성
+		ASoulWeapon* SpawnedWeapon = GetWorld()->SpawnActor<ASoulWeapon>(DefaultWeaponClass, GetActorTransform(), SpawnParams);
+
+		if (SpawnedWeapon) {
+			EquippedWeapon = SpawnedWeapon;
+
+			// 3. 무기를 캐릭터에 붙임
+			FAttachmentTransformRules AttachmentRules(EAttachmentRule::SnapToTarget, true);
+			EquippedWeapon->AttachToComponent(GetMesh(), AttachmentRules, FName("WeaponSocket"));
 		}
 	}
 }
@@ -126,6 +148,16 @@ void ASoulCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		{
 			UE_LOG(LogTemp, Error, TEXT("LookAction is NULL! Check Blueprint!")); // 실패 로그 (빨간색)
 		}
+		if (SprintAction) {
+			EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Triggered, this, &ASoulCharacter::SprintStart);
+			EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &ASoulCharacter::SprintStop);
+		}
+		if (CrouchAction) {
+			EnhancedInputComponent->BindAction(CrouchAction, ETriggerEvent::Started, this, &ASoulCharacter::OnCrouch);
+		}
+		if (RollAction) {
+			EnhancedInputComponent->BindAction(RollAction, ETriggerEvent::Started, this, &ASoulCharacter::Roll);
+		}
 	}
 }
 
@@ -164,5 +196,42 @@ void ASoulCharacter::Look(const FInputActionValue& Value)
 		// 마우스 움직임만큼 카메라 회전
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+
+void ASoulCharacter::SprintStart(const FInputActionValue& Value) {
+	GetCharacterMovement()->MaxWalkSpeed = 600.0f;
+}
+
+void ASoulCharacter::SprintStop(const FInputActionValue& Value) {
+	GetCharacterMovement()->MaxWalkSpeed = 200.0f;
+}
+
+void ASoulCharacter::OnCrouch() {
+	if (bIsCrouched) {
+		UnCrouch();
+	}
+	else
+	{
+		Crouch();
+	}
+}
+
+void ASoulCharacter::Roll() {
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if (!AnimInstance) return;
+
+	if (AnimInstance->Montage_IsPlaying(RollStandMontage) || AnimInstance->Montage_IsPlaying(RollSprintMontage)) {
+		return;
+	}
+
+	double CurrentSpeed = GetVelocity().Size2D();
+
+	if (CurrentSpeed > 250.0f && RollSprintMontage) {
+		PlayAnimMontage(RollSprintMontage);
+	}
+	else if (RollStandMontage) {
+		PlayAnimMontage(RollStandMontage);
 	}
 }
