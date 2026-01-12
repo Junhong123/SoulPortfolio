@@ -24,7 +24,25 @@ protected:
 	TObjectPtr<UStaticMeshComponent> WeaponMesh;
 
 public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	// 1. 공격 시작
+	void EnableCollision();
 
+	// 2. 공격 끝
+	void DisableCollision();
+
+	// 3. 매 프레임 판정 검사
+	void ExecuteTrace(FHitResult& HitResult);
+
+	// 4. 데미지랑 범위
+	float AttackDamage = 20.0f;
+	float AttackRadius = 30.0f;
+
+protected:
+	// 이미 맞은 적을 기억하는 배열
+	UPROPERTY()
+	TArray<AActor*> HitActors;
+
+	// 소켓 이름
+	FName SocketStart = FName("TraceStart");
+	FName SocketEnd = FName("TraceEnd");
 };

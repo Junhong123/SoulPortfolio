@@ -68,10 +68,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Motion Matching")
 	UCharacterTrajectoryComponent* CharacterTrajectory;
 
-	// 서있을때 구르기 몽타주
-	UPROPERTY(EditAnywhere, Category = "Combat")
-	class UAnimMontage* RollStandMontage;
-
 	// 달릴 때 구르기 몽타주
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	class UAnimMontage* RollSprintMontage;
@@ -99,6 +95,9 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
 	class UInputAction* RollAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input)
+	class UInputAction* AttackAction;
+
 	/** 실제 움직임을 처리할 함수들 */
 	void Move(const FInputActionValue& Value);
 	void Look(const FInputActionValue& Value);
@@ -107,6 +106,9 @@ protected:
 	void SprintStart(const FInputActionValue& Value);
 	void SprintStop(const FInputActionValue& Value);
 	void PerformAttack(const FInputActionValue& Value);
+
+public:
+	void AttackEnd();
 
 private:
 	// 카메라 지지대 (스프링 암)

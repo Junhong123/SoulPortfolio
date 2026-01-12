@@ -23,7 +23,7 @@ ASoulCharacter::ASoulCharacter()
 
 	// 3. 무브먼트 설정 (이동 방향 바라보기)
 	GetCharacterMovement()->bOrientRotationToMovement = true;
-	GetCharacterMovement()->RotationRate = FRotator(0.0f, 400.0f, 0.0f);
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 600.0f, 0.0f);
 
 	// 점프 및 이동 속도 설정 (소울라이크 느낌)
 	GetCharacterMovement()->JumpZVelocity = 700.f;
@@ -158,6 +158,9 @@ void ASoulCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 		if (RollAction) {
 			EnhancedInputComponent->BindAction(RollAction, ETriggerEvent::Started, this, &ASoulCharacter::Roll);
 		}
+		if (AttackAction) {
+			EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &ASoulCharacter::PerformAttack);
+		}
 	}
 }
 
@@ -222,16 +225,44 @@ void ASoulCharacter::Roll() {
 
 	if (!AnimInstance) return;
 
-	if (AnimInstance->Montage_IsPlaying(RollStandMontage) || AnimInstance->Montage_IsPlaying(RollSprintMontage)) {
+	// 이미 구르는 중이면 패스
+	if (AnimInstance->Montage_IsPlaying(RollSprintMontage)) {
 		return;
 	}
 
-	double CurrentSpeed = GetVelocity().Size2D();
+	// 입력 방향으로 즉시 회전
+	FVector InputVector = GetLastMovementInputVector();
 
-	if (CurrentSpeed > 250.0f && RollSprintMontage) {
-		PlayAnimMontage(RollSprintMontage);
+	if (!InputVector.IsNearlyZero()) {
+		FRotator TargetRotation = InputVector.Rotation();
+
+		TargetRotation.Pitch = 0.0f;
+		TargetRotation.Roll = 0.0f;
+
+		SetActorRotation(TargetRotation);
 	}
-	else if (RollStandMontage) {
-		PlayAnimMontage(RollStandMontage);
+
+	PlayAnimMontage(RollSprintMontage);
+}
+
+void ASoulCharacter::PerformAttack(const FInputActionValue& Value) {
+	// 1. 다른 행동 중이면 공격 불가 (구르기 중 등)
+	if (CharacterState != ECharacterState::ECS_Unoccupied) return;
+
+	// 2. 무기가 없으면 공격 불가
+	if (!EquippedWeapon) return;
+
+	// 3. 몽타주가 있으면 재생
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && AttackMontage) {
+		AnimInstance->Montage_Play(AttackMontage);
+
+		// 4. 공격 상태로 변경
+		CharacterState = ECharacterState::ECS_Attacking;
 	}
+}
+
+void ASoulCharacter::AttackEnd() {
+	// 상태를 자유로 변경
+	CharacterState = ECharacterState::ECS_Unoccupied;
 }
