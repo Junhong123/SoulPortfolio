@@ -285,7 +285,6 @@ void ASoulCharacter::AttackEnd() {
 			AnimInstance->Montage_JumpToSection(FName(*NextSection), AttackMontage);
 
 			bHasNextComboInput = false;
-			UE_LOG(LogTemp, Warning, TEXT("5."));
 		}
 	}
 	else {

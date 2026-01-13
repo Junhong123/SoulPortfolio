@@ -5,6 +5,7 @@
 #include "Kismet/KismetSystemLibrary.h" // 스피어 트레이스용
 #include "Kismet/GameplayStatics.h"     // 데미지 전달용
 #include "Engine/DamageEvents.h"        // 데미지 이벤트용
+#include "HitInterface.h"
 
 // Sets default values
 ASoulWeapon::ASoulWeapon()
@@ -72,6 +73,11 @@ void ASoulWeapon::ExecuteTrace(FHitResult& HitResult) {
 		if (HitActor && !HitActors.Contains(HitActor)) {
 			// 1. 목록에 추가 (중복 방지)
 			HitActors.Add(HitActor);
+
+			// 인터페이스가 있으면 GetHit 실행
+			if (IHitInterface* HitInterface = Cast<IHitInterface>(HitActor)) {
+				HitInterface->GetHit(HitResult.ImpactPoint);
+			}
 
 			// 2. 데미지 전달
 			UGameplayStatics::ApplyDamage(
