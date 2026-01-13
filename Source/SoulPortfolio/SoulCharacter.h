@@ -108,6 +108,10 @@ protected:
 	void PerformAttack(const FInputActionValue& Value);
 
 public:
+
+	// °ø°Ý ÄÞº¸
+	int32 ComboCount = 0;
+	bool bHasNextComboInput = false;
 	void AttackEnd();
 
 private:

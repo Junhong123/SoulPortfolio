@@ -192,7 +192,6 @@ void ASoulCharacter::Move(const FInputActionValue& Value)
 void ASoulCharacter::Look(const FInputActionValue& Value)
 {
 	FVector2D LookAxisVector = Value.Get<FVector2D>();
-	UE_LOG(LogTemp, Warning, TEXT("Mouse Input: X=%f, Y=%f"), LookAxisVector.X, LookAxisVector.Y);
 
 	if (Controller != nullptr)
 	{
@@ -246,23 +245,58 @@ void ASoulCharacter::Roll() {
 }
 
 void ASoulCharacter::PerformAttack(const FInputActionValue& Value) {
-	// 1. 다른 행동 중이면 공격 불가 (구르기 중 등)
-	if (CharacterState != ECharacterState::ECS_Unoccupied) return;
 
-	// 2. 무기가 없으면 공격 불가
+	// 1. 무기가 없으면
 	if (!EquippedWeapon) return;
 
-	// 3. 몽타주가 있으면 재생
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-	if (AnimInstance && AttackMontage) {
-		AnimInstance->Montage_Play(AttackMontage);
+	// 2. 만약 Unoccupied 라면
+	if (CharacterState == ECharacterState::ECS_Unoccupied) {
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance && AttackMontage) {
+			AnimInstance->Montage_Play(AttackMontage);
 
-		// 4. 공격 상태로 변경
-		CharacterState = ECharacterState::ECS_Attacking;
+			// 첫 공격 섹션 이름으로 점프
+			AnimInstance->Montage_JumpToSection(FName("Attack1"), AttackMontage);
+
+			CharacterState = ECharacterState::ECS_Attacking;
+			ComboCount = 1;
+			bHasNextComboInput = false;
+		}
+	}
+
+	// 3. 만약 이미 공격 중이라면
+	else if (CharacterState == ECharacterState::ECS_Attacking) {
+		bHasNextComboInput = true;
 	}
 }
 
 void ASoulCharacter::AttackEnd() {
-	// 상태를 자유로 변경
-	CharacterState = ECharacterState::ECS_Unoccupied;
+	// 1. 다음 공격 예약이 있으면
+	if (bHasNextComboInput) {
+		ComboCount++;
+
+		if (ComboCount > 3) ComboCount = 1;
+
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance && AttackMontage) {
+			// 섹션 이름 만들기
+			FString NextSection = FString::Printf(TEXT("Attack%d"), ComboCount);
+
+			AnimInstance->Montage_JumpToSection(FName(*NextSection), AttackMontage);
+
+			bHasNextComboInput = false;
+			UE_LOG(LogTemp, Warning, TEXT("5."));
+		}
+	}
+	else {
+		CharacterState = ECharacterState::ECS_Unoccupied;
+		ComboCount = 0;
+		bHasNextComboInput = false;
+
+		// 몽타주를 부드럽게 멈춰라
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+		if (AnimInstance) {
+			AnimInstance->Montage_Stop(0.25f, AttackMontage);
+		}
+	}
 }
