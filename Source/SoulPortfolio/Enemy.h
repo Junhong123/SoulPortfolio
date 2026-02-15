@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "HitInterface.h"
+#include "AttributeComponent.h"
 #include "Enemy.generated.h"
 
 UCLASS()
@@ -38,4 +39,27 @@ private:
 	// 타격 사운드
 	UPROPERTY(EditAnywhere, Category = "Combat")
 	class USoundBase* HitSound;
+
+	// 체력 부품
+	UPROPERTY(VisibleAnywhere)
+	class UAttributeComponent* Attributes;
+
+	// 죽었을 때 상태 관리
+	bool bIsDead = false;
+
+	// 죽는 애니메이션
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	UAnimMontage* DeathMontage;
+
+	// 언리얼 엔진의 기본 데미지 처리 함수 오버라이드
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+
+	// 죽음 처리 함수
+	void Die();
+
+	// 랙돌을 켜는 전용 함수
+	void EnableRagdoll();
+
+	// 타이머를 관리할 핸들
+	FTimerHandle RagdollTimerHandle;
 };

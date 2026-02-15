@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
+#include "Perception/AIPerceptionTypes.h"
 #include "EnemyAIController.generated.h"
 
 /**
@@ -14,9 +15,24 @@ class SOULPORTFOLIO_API AEnemyAIController : public AAIController
 {
 	GENERATED_BODY()
 
+public:
+	AEnemyAIController();
+
 protected:
 	virtual void BeginPlay() override;
 
 public:
 	virtual void Tick(float DeltaTime) override;
+
+private:
+	UPROPERTY(EditAnywhere, Category = "AI")
+	class UBehaviorTree* AIBehavior;
+
+	UPROPERTY(VisibleAnywhere, Category = "AI")
+	class UAIPerceptionComponent* EnemyPerception;
+
+	class UAISenseConfig_Sight* SightConfig;
+
+	UFUNCTION()
+	void OnPerceptionUpdated(AActor* Actor, FAIStimulus Stimulus);
 };

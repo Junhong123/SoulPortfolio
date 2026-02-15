@@ -21,7 +21,8 @@ public class SoulPortfolio : ModuleRules
             "Slate",
             "AnimGraphRuntime",
             "MotionTrajectory",
-            "PoseSearch"
+            "PoseSearch",
+            "NavigationSystem"
         });
 
         PrivateDependencyModuleNames.AddRange(new string[] { });
